@@ -8,26 +8,31 @@
 </head>
 <body>
     <div class="app-container">
-        <button id="disconnectBtn" class="disconnect-btn">Disconnect</button>
-        <button id="connectBtn" class="connect-btn" style="display: none;">Connect</button>
-        <button id="settingsBtn" class="settings-btn">⚙️</button>
-        <button id="cameraBtn" class="camera-btn">
+        <button id="disconnectBtn" class="disconnect-btn" aria-label="Disconnect">Disconnect</button>
+        <button id="connectBtn" class="connect-btn" style="display: none;" aria-label="Connect">Connect</button>
+        <button id="settingsBtn" class="settings-btn" aria-label="Settings">⚙️</button>
+        <button id="cameraBtn" class="camera-btn" aria-label="Camera">
             <span class="camera-icon">📷</span>
         </button>
-        <button id="screenBtn" class="screen-btn">
+        <button id="screenBtn" class="screen-btn" aria-label="Screen Share">
             <span class="screen-icon">🖥️</span>
         </button>
-        <button id="micBtn" class="mic-btn">
+        <button id="micBtn" class="mic-btn" aria-label="Microphone">
             <span class="mic-icon">🎤</span>
         </button>
-        <div id="chatHistory" class="chat-history"></div>
-        <canvas id="visualizer" class="visualizer"></canvas>
-        <div id="cameraPreview" class="camera-preview"></div>
-        <div id="screenPreview" class="screen-preview"></div>
+        <div id="chatHistory" class="chat-history" aria-live="polite"></div>
+        <canvas id="visualizer" class="visualizer" aria-hidden="true"></canvas>
+        <div id="cameraPreview" class="camera-preview" aria-hidden="true"></div>
+        <div id="screenPreview" class="screen-preview" aria-hidden="true"></div>
         <div class="text-input-container">
-            <input type="text" id="messageInput" placeholder="Type your message..." class="text-input">
-            <button id="sendBtn" class="send-btn">➤</button>
+            <input type="text" id="messageInput" placeholder="Type your message..." class="text-input" aria-label="Message Input">
+            <button id="sendBtn" class="send-btn" aria-label="Send Message">➤</button>
         </div>
+        <form id="settingsForm">
+            <input type="text" id="username" name="username" placeholder="Username" autocomplete="username" style="display: none;">
+            <input type="password" id="deepgramApiKey" placeholder="Enter your Deepgram API key" autocomplete="new-password">
+            <button type="submit">Save</button>
+        </form>
     </div>
     <script type="module" src="js/script.js"></script>
 </body>

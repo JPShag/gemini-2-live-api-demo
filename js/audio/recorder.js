@@ -30,19 +30,33 @@ export class AudioRecorder extends EventTarget {
     async start(onAudioData) {
         this.onAudioData = onAudioData;
         try {
-            // Request microphone access with specific echo cancelation and noise reduction
-            this.stream = await navigator.mediaDevices.getUserMedia({ 
+            // Get audio input device id from localStorage
+            const audioInputDeviceId = localStorage.getItem('audioInputDevice') || 'default';
+
+            // Request microphone access with specific echo cancelation, noise reduction, and deviceId
+            const constraints = {
                 audio: {
                     channelCount: 1,
                     sampleRate: this.sampleRate,
                     echoCancellation: true,
                     noiseSuppression: true,
-                    autoGainControl: true
-                } 
-            });
-            
+                    autoGainControl: true,
+                    deviceId: audioInputDeviceId === 'default' ? undefined : { exact: audioInputDeviceId }
+                }
+            };
+
+            this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+
             // Initialize Web Audio API context and nodes
             this.audioContext = new AudioContext({ sampleRate: this.sampleRate });
+
+            // Check and adjust sample rate compatibility
+            if (this.audioContext.sampleRate !== this.stream.getAudioTracks()[0].getSettings().sampleRate) {
+                console.warn('Adjusting AudioContext sample rate to match media stream.');
+                this.audioContext.close();
+                this.audioContext = new AudioContext({ sampleRate: this.stream.getAudioTracks()[0].getSettings().sampleRate });
+            }
+
             this.source = this.audioContext.createMediaStreamSource(this.stream);
 
             // Load and initialize audio processing worklet
@@ -72,7 +86,7 @@ export class AudioRecorder extends EventTarget {
      * Gracefully stops audio recording and cleans up resources
      * Stops media tracks and logs the operation completion
      */
-    stop() {
+    async stop() {
         try {
             if (!this.isRecording) {
                 return;
@@ -115,7 +129,7 @@ export class AudioRecorder extends EventTarget {
      * Resumes microphone input if previously suspended
      */
     async resumeMic() {
-        if (!this.isRecording || !this.isSuspended) return;
+        if (!this.isRecording || this.isSuspended) return;
         
         try {
             await this.audioContext.resume();

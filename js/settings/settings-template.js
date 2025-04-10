@@ -21,6 +21,20 @@ export const settingsTemplate = `
 </div>
 
 <div class="settings-group">
+    <label for="audioInputDevice">Audio Input Device</label>
+    <select id="audioInputDevice">
+        <option value="default">Default</option>
+    </select>
+</div>
+
+<div class="settings-group">
+    <label for="audioOutputDevice">Audio Output Device</label>
+    <select id="audioOutputDevice">
+        <option value="default">Default</option>
+    </select>
+</div>
+
+<div class="settings-group">
     <label for="sampleRate">Sample Rate</label>
     <input type="range" id="sampleRate" min="8000" max="48000" step="1000">
     <span id="sampleRateValue"></span>
@@ -101,4 +115,4 @@ export const settingsTemplate = `
     </div>
 </div>
 
-<button id="settingsSaveBtn" class="settings-save-btn">Save Settings</button>`; 
+<button id="settingsSaveBtn" class="settings-save-btn">Save Settings</button>`;

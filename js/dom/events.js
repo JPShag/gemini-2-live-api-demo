@@ -38,7 +38,7 @@ const ensureAgentReady = async (agent) => {
  * Sets up event listeners for the application's UI elements
  * @param {GeminiAgent} agent - The main application agent instance
  */
-export function setupEventListeners(agent) {
+export function setupEventListeners(agent, settingsManager) {
     // Disconnect handler
     elements.disconnectBtn.addEventListener('click', async () => {
         try {
@@ -146,4 +146,4 @@ export function setupEventListeners(agent) {
 }
 
 // Initialize settings
-settingsManager;
+// settingsManager;
