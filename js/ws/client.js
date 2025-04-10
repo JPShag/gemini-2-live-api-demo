@@ -207,23 +207,11 @@ export class GeminiWebsocketClient extends EventEmitter {
         }
 
         const { output, id, error } = toolResponse;
-        let result = [];
+        const result = error
+            ? [{ response: { error: error }, id }]
+            : [{ response: { output: output }, id }];
 
-        if (error) {
-            result = [{
-                response: { error: error },
-                id
-            }];
-        } else if (output === undefined) {
-            throw new Error('Tool response must include an output when no error is provided');
-        } else {
-            result = [{
-                response: { output: output },
-                id
-            }];
-        }
-
-        await this.sendJSON({ toolResponse: {functionResponses: result} });
+        await this.sendJSON({ toolResponse: { functionResponses: result } });
         console.debug(`Tool response sent to ${this.name}:`, toolResponse);
     }
 
@@ -266,11 +254,5 @@ export class GeminiWebsocketClient extends EventEmitter {
         console.debug('Realtime input sent:', realtimeMessage);
     }
 
-    async sendToolResponse(response) {
-        const toolResponseMessage = {
-            toolResponse: response
-        };
-        this.sendJSON(toolResponseMessage);
-        console.debug('Tool response sent:', toolResponseMessage);
-    }
+    // Removed duplicate sendToolResponse method to avoid conflicts.
 }

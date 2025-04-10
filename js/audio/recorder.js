@@ -129,7 +129,7 @@ export class AudioRecorder extends EventTarget {
      * Resumes microphone input if previously suspended
      */
     async resumeMic() {
-        if (!this.isRecording || this.isSuspended) return;
+        if (!this.isRecording || !this.isSuspended) return;
         
         try {
             await this.audioContext.resume();

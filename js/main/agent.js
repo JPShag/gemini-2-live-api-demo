@@ -13,6 +13,7 @@ import { DeepgramTranscriber } from '../transcribe/deepgram.js';
 
 import { CameraManager } from '../camera/camera.js';
 import { ScreenManager } from '../screen/screen.js';
+import { settingsManager } from '../settings/manager.js';
 
 export class GeminiAgent{
     constructor({
