@@ -5,12 +5,20 @@
     --text-color: #ffffff;
     --accent-color: #4CAF50;
     --danger-color: #ff4444;
+    --hover-opacity: 0.9;
+    --transition-duration: 0.3s;
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    transition: all var(--transition-duration) ease;
+}
+
+button {
+    cursor: pointer;
+    pointer-events: auto;
 }
 
 body {
@@ -29,6 +37,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 1;
 }
 
 .disconnect-btn {
@@ -43,11 +52,14 @@ body {
     cursor: pointer;
     font-size: 16px;
     transition: all 0.3s ease;
+    z-index: 10;
+    pointer-events: auto;
 }
 
 .disconnect-btn:hover {
     background-color: var(--danger-color);
     color: var(--text-color);
+    opacity: var(--hover-opacity);
 }
 
 .connect-btn {
@@ -62,11 +74,14 @@ body {
     cursor: pointer;
     font-size: 16px;
     transition: all 0.3s ease;
+    z-index: 10;
+    pointer-events: auto;
 }
 
 .connect-btn:hover {
     background-color: var(--accent-color);
     color: var(--text-color);
+    opacity: var(--hover-opacity);
 }
 
 .mic-btn {
@@ -81,10 +96,11 @@ body {
     justify-content: center;
     align-items: center;
     transition: all 0.3s ease;
-    z-index: 2;
+    z-index: 10;
     position: absolute;
     bottom: 22px;
     right: 25px;
+    pointer-events: auto;
 }
 
 .camera-btn,
@@ -94,15 +110,16 @@ body {
     border-radius: 50%;
     background-color: var(--button-bg);
     border: 2px solid var(--accent-color);
-    color: var(--text-color);
+    color: var (--text-color);
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
     transition: all 0.3s ease;
-    z-index: 2;
+    z-index: 10;
     position: absolute;
     right: 25px;
+    pointer-events: auto;
 }
 
 .camera-btn {
@@ -117,6 +134,7 @@ body {
 .screen-btn:hover {
     background-color: var(--button-hover);
     transform: scale(1.05);
+    opacity: var(--hover-opacity);
 }
 
 .camera-btn.active,
@@ -124,7 +142,6 @@ body {
     background-color: var(--accent-color);
 }
 
-/* Media query for small devices */
 @media screen and (max-width: 350px) {
     .mic-btn {
         bottom: 80px;
@@ -137,11 +154,17 @@ body {
     .screen-btn {
         bottom: 140px;
     }
+
+    .text-input-container {
+        flex-direction: column;
+        gap: 5px;
+    }
 }
 
 .mic-btn:hover {
     background-color: var(--button-hover);
     transform: scale(1.05);
+    opacity: var(--hover-opacity);
 }
 
 .mic-btn.active {
@@ -246,7 +269,6 @@ body {
     object-fit: contain; /* Maintain aspect ratio without cropping */
 }
 
-/* Media query for devices with width less than 340px */
 @media (max-width: 340px) {
     .camera-preview {
         width: 180px;
@@ -300,11 +322,13 @@ body {
     cursor: pointer;
     font-size: 20px;
     transition: all 0.3s ease;
-    z-index: 1000;
+    z-index: 10;
+    pointer-events: auto;
 }
 
 .settings-btn:hover {
     background-color: var(--button-hover);
+    opacity: var(--hover-opacity);
 }
 
 .settings-dialog {

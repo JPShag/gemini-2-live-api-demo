@@ -1,5 +1,9 @@
 # Gemini 2.0 Flash Multimodal Live API Client
 
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Contributions](https://img.shields.io/badge/contributions-welcome-orange)
+
 A lightweight vanilla JavaScript implementation of the Gemini 2.0 Flash Multimodal Live API client. This project provides real-time interaction with Gemini's API through text, audio, video, and screen sharing capabilities.
 
 This is a simplified version of [Google's original React implementation](https://github.com/google-gemini/multimodal-live-api-web-console), created in response to [this issue](https://github.com/google-gemini/multimodal-live-api-web-console/issues/19).
@@ -46,6 +50,13 @@ This is a simplified version of [Google's original React implementation](https:/
 
 5. Open the settings at the top right, paste your API key, and click "Save"
 6. Get free API key from [Deepgram](https://deepgram.com/pricing) and paste in the settings to get real-time transcript (Optional).
+
+## Adding a Favicon
+
+To prevent a 404 error for the favicon, add a `favicon.ico` file to the root directory of the project. You can use any 16x16 or 32x32 `.ico` file.
+
+## Documentation
+- [Live API Overview](docs/live-api-overview.md): Learn about the Live API's features, usage, and limitations.
 
 ## Contributing
 

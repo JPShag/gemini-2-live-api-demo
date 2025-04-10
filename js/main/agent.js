@@ -25,8 +25,12 @@ export class GeminiAgent{
         modelSampleRate = 24000,
         toolManager = null
     } = {}) {
-        if (!url) throw new Error('WebSocket URL is required');
-        if (!config) throw new Error('Config is required');
+        if (!url) {
+            throw new Error('WebSocket URL is required');
+        }
+        if (!config) {
+            throw new Error('Config is required');
+        }
 
         this.initialized = false;
         this.connected = false;
@@ -42,6 +46,9 @@ export class GeminiAgent{
         this.deepgramApiKey = deepgramApiKey;
         this.modelSampleRate = modelSampleRate;
 
+        this.audioInputDevice = localStorage.getItem('audioInputDevice') || 'default';
+        this.audioOutputDevice = localStorage.getItem('audioOutputDevice') || 'default';
+        
         // Initialize screen & camera settings
         this.fps = localStorage.getItem('fps') || '5';
         this.captureInterval = 1000 / this.fps;
@@ -75,11 +82,14 @@ export class GeminiAgent{
         // Add function declarations to config
         this.toolManager = toolManager;
         config.tools.functionDeclarations = toolManager.getToolDeclarations() || [];
-        this.config = config;
+        this.updateConfig(config);
 
         this.name = name;
         this.url = url;
         this.client = null;
+
+        // Listen for settings saved event
+        this.settingsManager = null;
     }
 
     setupEventListeners() {
@@ -87,7 +97,7 @@ export class GeminiAgent{
         this.client.on('audio', async (data) => {
             try {
                 if (!this.audioStreamer.isInitialized) {
-                    this.audioStreamer.initialize();
+                    await this.audioStreamer.initialize();
                 }
                 this.audioStreamer.streamAudio(new Uint8Array(data));
 
@@ -95,8 +105,8 @@ export class GeminiAgent{
                     this.modelTranscriber.sendAudio(data);
                 }
 
-            } catch (error) {
-                throw new Error('Audio processing error:' + error);
+            } catch (err) {
+                console.error('Audio processing error:', err);
             }
         });
 
@@ -114,15 +124,24 @@ export class GeminiAgent{
         });
 
         this.client.on('tool_call', async (toolCall) => {
-            await this.handleToolCall(toolCall);
+            try {
+                await this.handleToolCall(toolCall);
+            } catch (error) {
+                console.error("Error handling tool call:", error);
+            }
         });
     }
         
     // TODO: Handle multiple function calls
     async handleToolCall(toolCall) {
-        const functionCall = toolCall.functionCalls[0];
-        const response = await this.toolManager.handleToolCall(functionCall);
-        await this.client.sendToolResponse(response);
+        try {
+            for (const functionCall of toolCall.functionCalls) {
+                const response = await this.toolManager.handleToolCall(functionCall);
+                await this.client.sendToolResponse(response);
+            }
+        } catch (error) {
+            console.error("Error during handleToolCall:", error);
+        }
     }
 
     /**
@@ -133,6 +152,12 @@ export class GeminiAgent{
         await this.client.connect();
         this.setupEventListeners();
         this.connected = true;
+
+        // Initialize settings manager
+        this.settingsManager = settingsManager;
+        this.settingsManager.on('settingsSaved', () => {
+            this.updateConfig();
+        });
     }
 
     /**
@@ -149,7 +174,7 @@ export class GeminiAgent{
      */
     async startCameraCapture() {
         if (!this.connected) {
-            throw new Error('Must be connected to start camera capture');
+            throw new Error('WebSocket must be connected to start camera capture');
         }
 
         try {
@@ -157,8 +182,12 @@ export class GeminiAgent{
             
             // Set up interval to capture and send images
             this.cameraInterval = setInterval(async () => {
-                const imageBase64 = await this.cameraManager.capture();
-                this.client.sendImage(imageBase64);                
+                try {
+                    const imageBase64 = await this.cameraManager.capture();
+                    this.client.sendImage(imageBase64);
+                } catch (error) {
+                    console.error("Error capturing or sending image:", error);
+                }
             }, this.captureInterval);
             
             console.info('Camera capture started');
@@ -189,7 +218,7 @@ export class GeminiAgent{
      */
     async startScreenShare() {
         if (!this.connected) {
-            throw new Error('Websocket must be connected to start screen sharing');
+            throw new Error('WebSocket must be connected to start screen sharing');
         }
 
         try {
@@ -197,8 +226,12 @@ export class GeminiAgent{
             
             // Set up interval to capture and send screenshots
             this.screenInterval = setInterval(async () => {
-                const imageBase64 = await this.screenManager.capture();
-                this.client.sendImage(imageBase64);
+                try{
+                    const imageBase64 = await this.screenManager.capture();
+                    this.client.sendImage(imageBase64);
+                } catch (error) {
+                    console.error("Error capturing or sending screenshot:", error);
+                }
             }, this.captureInterval);
             
             console.info('Screen sharing started');
@@ -232,28 +265,48 @@ export class GeminiAgent{
         try {
             // Stop camera capture first
             await this.stopCameraCapture();
+        } catch (err) {
+            console.error('Error stopping camera capture:', err);
+        }
 
+        try {
             // Stop screen sharing
             await this.stopScreenShare();
+        } catch (err) {
+            console.error('Error stopping screen sharing:', err);
+        }
 
+        try {
             // Cleanup audio resources in correct order
             if (this.audioRecorder) {
                 this.audioRecorder.stop();
                 this.audioRecorder = null;
             }
+        } catch (err) {
+            console.error('Error stopping audio recorder:', err);
+        }
 
+        try {
             // Cleanup audio visualizer before audio context
             if (this.visualizer) {
                 this.visualizer.cleanup();
                 this.visualizer = null;
             }
+        } catch (err) {
+            console.error('Error cleaning up visualizer:', err);
+        }
 
+        try {
             // Clean up audio streamer before closing context
             if (this.audioStreamer) {
                 this.audioStreamer.stop();
                 this.audioStreamer = null;
             }
+        } catch (err) {
+            console.error('Error stopping audio streamer:', err);
+        }
 
+        try {
             // Cleanup model's speech transcriber
             if (this.modelTranscriber) {
                 this.modelTranscriber.disconnect();
@@ -263,7 +316,11 @@ export class GeminiAgent{
                     this.modelsKeepAliveInterval = null;
                 }
             }
+        } catch (err) {
+            console.error('Error cleaning up model transcriber:', err);
+        }
 
+        try {
             // Cleanup user's speech transcriber
             if (this.userTranscriber) {
                 this.userTranscriber.disconnect();
@@ -273,13 +330,21 @@ export class GeminiAgent{
                     this.userKeepAliveInterval = null;
                 }
             }
+        } catch (err) {
+            console.error('Error cleaning up user transcriber:', err);
+        }
 
+        try {
             // Finally close audio context
             if (this.audioContext) {
                 await this.audioContext.close();
                 this.audioContext = null;
             }
+        } catch (err) {
+            console.error('Error closing audio context:', err);
+        }
 
+        try {
             // Cleanup WebSocket
             this.client.disconnect();
             this.client = null;
@@ -287,8 +352,8 @@ export class GeminiAgent{
             this.connected = false;
             
             console.info('Disconnected and cleaned up all resources');
-        } catch (error) {
-            throw new Error('Disconnect error:' + error);
+        } catch (err) {
+            console.error('Error cleaning up WebSocket:', err);
         }
     }
 
@@ -369,7 +434,7 @@ export class GeminiAgent{
      * Streams audio data to the model in real-time, handling interruptions
      */
     async initialize() {
-        try {            
+        try {
             // Initialize audio components
             this.audioContext = new AudioContext();
             this.audioStreamer = new AudioStreamer(this.audioContext);
@@ -378,7 +443,7 @@ export class GeminiAgent{
             this.audioStreamer.gainNode.connect(this.visualizer.analyser);
             this.visualizer.start();
             this.audioRecorder = new AudioRecorder();
-            
+
             // Initialize transcriber if API key is provided
             if (this.deepgramApiKey) {
                 if (this.transcribeModelsSpeech) {
@@ -392,13 +457,12 @@ export class GeminiAgent{
             } else {
                 console.warn('No Deepgram API key provided, transcription disabled');
             }
-            
+
             this.initialized = true;
             console.info(`${this.client.name} initialized successfully`);
             this.client.sendText('.');  // Trigger the model to start speaking first
-        } catch (error) {
-            console.error('Initialization error:', error);
-            throw new Error('Error during the initialization of the client: ' + error.message);
+        } catch (err) {
+            console.error('Initialization error:', err);
         }
     }
 
@@ -410,8 +474,8 @@ export class GeminiAgent{
                 if (this.userTranscriber && this.userTranscriber.isConnected) {
                     this.userTranscriber.sendAudio(new Uint8Array(audioData));
                 }
-            } catch (error) {
-                console.error('Error sending audio data:', error);
+            } catch (err) {
+                console.error('Error sending audio data:', err);
                 this.audioRecorder.stop();
             }
         });
@@ -426,10 +490,15 @@ export class GeminiAgent{
             return;
         }
         await this.audioRecorder.toggleMic();
-    }           
+    }
+
+    updateConfig(config = getConfig()) {
+        this.config = config;
+        this.client.config = config;
+    }
 
     // Add event emitter functionality
-    on(eventName, callback) {
+    on = (eventName, callback) => {
         if (!this._eventListeners) {
             this._eventListeners = new Map();
         }
@@ -439,7 +508,7 @@ export class GeminiAgent{
         this._eventListeners.get(eventName).push(callback);
     }
 
-    emit(eventName, data) {
+    emit = (eventName, data) => {
         if (!this._eventListeners || !this._eventListeners.has(eventName)) {
             return;
         }

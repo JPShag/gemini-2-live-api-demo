@@ -1,10 +1,23 @@
 import { settingsTemplate } from './settings-template.js';
+import { EventEmitter } from 'https://cdn.skypack.dev/eventemitter3';
 
-class SettingsManager {
+export default class SettingsManager extends EventEmitter {
     constructor() {
+        super();
+        this.settings = {};
         this.initializeElements();
         this.setupEventListeners();
         this.loadSettings();
+        this.populateAudioInputDevices();
+    }
+
+    saveSetting(key, value) {
+        this.settings[key] = value;
+        localStorage.setItem(key, value);
+    }
+
+    getSetting(key) {
+        return this.settings[key] || localStorage.getItem(key);
     }
 
     initializeElements() {
@@ -29,8 +42,9 @@ class SettingsManager {
             voiceSelect: this.dialog.querySelector('#voice'),
             sampleRateInput: this.dialog.querySelector('#sampleRate'),
             sampleRateValue: this.dialog.querySelector('#sampleRateValue'),
+            audioInputDeviceSelect: this.dialog.querySelector('#audioInputDevice'),
+            audioOutputDeviceSelect: this.dialog.querySelector('#audioOutputDevice'),
             systemInstructionsToggle: this.dialog.querySelector('#systemInstructionsToggle'),
-            systemInstructionsContent: this.dialog.querySelector('#systemInstructions').parentElement,
             systemInstructionsInput: this.dialog.querySelector('#systemInstructions'),
             screenCameraToggle: this.dialog.querySelector('#screenCameraToggle'),
             screenCameraContent: this.dialog.querySelector('#screenCameraToggle + .collapsible-content'),
@@ -73,7 +87,7 @@ class SettingsManager {
         this.elements.saveBtn.addEventListener('click', () => {
             this.saveSettings();
             this.hide();
-            window.location.reload();
+            this.emitSettingsSaved();
         });
 
         // Toggle collapsible sections
@@ -115,7 +129,8 @@ class SettingsManager {
         this.elements.temperatureInput.value = localStorage.getItem('temperature') || '1.8';
         this.elements.topPInput.value = localStorage.getItem('top_p') || '0.95';
         this.elements.topKInput.value = localStorage.getItem('top_k') || '65';
-
+        this.elements.audioInputDeviceSelect.value = localStorage.getItem('audioInputDevice') || 'default';
+        this.elements.audioOutputDeviceSelect.value = localStorage.getItem('audioOutputDevice') || 'default';
         // Initialize screen & camera settings
         this.elements.fpsInput.value = localStorage.getItem('fps') || '1';
         this.elements.resizeWidthInput.value = localStorage.getItem('resizeWidth') || '640';
@@ -139,7 +154,8 @@ class SettingsManager {
         localStorage.setItem('temperature', this.elements.temperatureInput.value);
         localStorage.setItem('top_p', this.elements.topPInput.value);
         localStorage.setItem('top_k', this.elements.topKInput.value);
-        
+        localStorage.setItem('audioInputDevice', this.elements.audioInputDeviceSelect.value);
+        localStorage.setItem('audioOutputDevice', this.elements.audioOutputDeviceSelect.value);
         // Save screen & camera settings
         localStorage.setItem('fps', this.elements.fpsInput.value);
         localStorage.setItem('resizeWidth', this.elements.resizeWidthInput.value);
@@ -150,6 +166,10 @@ class SettingsManager {
         localStorage.setItem('dangerousContentThreshold', this.elements.dangerousInput.value);
         localStorage.setItem('sexuallyExplicitThreshold', this.elements.sexualInput.value);
         localStorage.setItem('civicIntegrityThreshold', this.elements.civicInput.value);
+    }
+
+    emitSettingsSaved() {
+        this.emit('settingsSaved');
     }
 
     updateDisplayValues() {
@@ -185,12 +205,40 @@ class SettingsManager {
     show() {
         this.dialog.classList.add('active');
         this.overlay.classList.add('active');
+        this.populateAudioInputDevices();
     }
 
     hide() {
         this.dialog.classList.remove('active');
         this.overlay.classList.remove('active');
     }
-}
 
-export default new SettingsManager(); 
+    async populateAudioInputDevices() {
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const audioInputDevices = devices.filter(device => device.kind === 'audioinput');
+
+            // Clear existing options
+            this.elements.audioInputDeviceSelect.innerHTML = '';
+
+            // Add default option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = 'default';
+            defaultOption.textContent = 'Default';
+            this.elements.audioInputDeviceSelect.appendChild(defaultOption);
+
+            // Add audio input devices
+            audioInputDevices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.deviceId;
+                option.textContent = device.label || `Microphone ${this.elements.audioInputDeviceSelect.options.length}`;
+                this.elements.audioInputDeviceSelect.appendChild(option);
+            });
+
+            // Set selected value
+            this.elements.audioInputDeviceSelect.value = localStorage.getItem('audioInputDevice') || 'default';
+        } catch (error) {
+            console.error('Error enumerating audio devices:', error);
+        }
+    }
+}

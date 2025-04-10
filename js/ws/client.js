@@ -186,7 +186,7 @@ export class GeminiWebsocketClient extends EventEmitter {
             clientContent: { 
                 turns: [{
                     role: 'user', 
-                    parts: { text: text } // TODO: Should it be in the list or not?
+                    parts: [{ text: text }] // TODO: Should it be in the list or not?
                 }], 
                 turnComplete: endOfTurn 
             } 
@@ -235,10 +235,42 @@ export class GeminiWebsocketClient extends EventEmitter {
 
     async sendJSON(json) {        
         try {
-            this.ws.send(JSON.stringify(json));
-            // console.debug(`JSON Object was sent to ${this.name}:`, json);
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(JSON.stringify(json));
+            } else {
+                console.warn('WebSocket is not open. Data not sent:', json);
+            }
         } catch (error) {
             throw new Error(`Failed to send ${json} to ${this.name}:` + error);
         }
+    }
+
+    async sendSetupMessage(config) {
+        const setupMessage = {
+            setup: {
+                model: config.model,
+                generationConfig: config.generationConfig,
+                systemInstruction: config.systemInstruction,
+                tools: config.tools || []
+            }
+        };
+        this.sendJSON(setupMessage);
+        console.debug('Setup message sent:', setupMessage);
+    }
+
+    async sendRealtimeInput(input) {
+        const realtimeMessage = {
+            realtimeInput: input
+        };
+        this.sendJSON(realtimeMessage);
+        console.debug('Realtime input sent:', realtimeMessage);
+    }
+
+    async sendToolResponse(response) {
+        const toolResponseMessage = {
+            toolResponse: response
+        };
+        this.sendJSON(toolResponseMessage);
+        console.debug('Tool response sent:', toolResponseMessage);
     }
 }
